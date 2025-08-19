@@ -34,13 +34,13 @@ It aims to provide **trust, transparency, and explainability** in an era where g
    ┌──────┴────────┐<br>
    │   Type Router │<br>
    └──────┬────────┘<br>
-      <br>│<br>
+      │<br>
  ┌────────┼─────────┬─────────┬─────────┐<br>
  │        │         │         │         │<br>
 Text  Image     Audio     Video    (Future: Docs)<br>
  │        │         │         │<br>
  └────────┴─────────┴─────────┴─────────┘<br>
-      <br>│<br>
+     │<br>
    [Fusion + Calibrator]<br>
-      <br>│<br>
+     │<br>
    [Decision + Explanation]<br>
