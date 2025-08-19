@@ -3,8 +3,6 @@
 
 ---
 
-![Authentica Banner](./assets/banner.png) <!-- Replace with your banner/logo -->
-
 <p align="center">
   <img src="https://img.shields.io/badge/AI-Deepfake%20Detection-blueviolet?style=flat-square" />
   <img src="https://img.shields.io/badge/Status-Under%20Development-orange?style=flat-square" />
@@ -30,3 +28,19 @@ It aims to provide **trust, transparency, and explainability** in an era where g
 ---
 
 ## 🏗️ System Architecture
+
+[Input: Text / Image / Audio / Video] <br>
+          │<br>
+   ┌──────┴────────┐<br>
+   │   Type Router │<br>
+   └──────┬────────┘<br>
+          │<br>
+ ┌────────┼─────────┬─────────┬─────────┐<br>
+ │        │         │         │         │<br>
+Text  Image     Audio     Video    (Future: Docs)<br>
+ │        │         │         │<br>
+ └────────┴─────────┴─────────┴─────────┘<br>
+          │<br>
+   [Fusion + Calibrator]<br>
+          │<br>
+   [Decision + Explanation]<br>
