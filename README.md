@@ -34,13 +34,91 @@ It aims to provide **trust, transparency, and explainability** in an era where g
    ┌──────┴────────┐<br>
    │   Type Router │<br>
    └──────┬────────┘<br>
-      │<br>
+          │<br>
  ┌────────┼─────────┬─────────┬─────────┐<br>
  │        │         │         │         │<br>
 Text  Image     Audio     Video    (Future: Docs)<br>
  │        │         │         │<br>
  └────────┴─────────┴─────────┴─────────┘<br>
-     │<br>
+          │<br>
    [Fusion + Calibrator]<br>
-     │<br>
+          │<br>
    [Decision + Explanation]<br>
+
+   
+---
+
+## ⚙️ Tech Stack
+- **Frameworks**: PyTorch, HuggingFace Transformers, TorchAudio, Streamlit, FastAPI  
+- **Text**: RoBERTa/DeBERTa + stylometry features  
+- **Image**: EfficientNet / Vision Transformers + FFT/DCT analysis  
+- **Audio**: ResNet + Mel-Spectrogram + CQCC features  
+- **Video**: Frame-level CNN + Temporal model (LSTM / TimeSformer)  
+- **Backend**: FastAPI  
+- **Frontend**: Streamlit (demo UI)  
+- **Storage**: MinIO / S3 for uploads, PostgreSQL for metadata  
+
+---
+
+## 📊 Datasets Used
+- **Text**: [HC3](https://arxiv.org/abs/2301.07597), GPT-generated corpora  
+- **Image**: [FaceForensics++](https://github.com/ondyari/FaceForensics), StyleGAN/ProGAN, DeeperForensics  
+- **Audio**: [ASVspoof](https://datashare.ed.ac.uk/handle/10283/3336), WaveFake, Fake or Real Speech  
+- **Video**: Celeb-DF v2, DFDC, FaceForensics++  
+
+---
+
+## 🚀 Roadmap
+- ✅ Phase 1: Text & Image deepfake detection  
+- 🔄 Phase 2: Add Audio & Video modules  
+- 🔮 Phase 3: Multi-modal fusion + explainability dashboard  
+- 🌍 Phase 4: Real-world deployment with API & UI  
+
+---
+
+## 📈 Evaluation Metrics
+- **Text**: AUC, F1, Perplexity-robustness  
+- **Image/Video**: AUC, EER, Grad-CAM visualization  
+- **Audio**: t-DCF, EER, channel robustness tests  
+- **Cross-dataset generalization** for real-world performance  
+
+---
+
+## 🧪 Example Output (Demo Ideas)
+- ✅ Upload an **image** → Result: *Fake, 92% confidence* → Heatmap highlighting manipulated regions.  
+- ✅ Upload **text** → Result: *AI-Generated, 87% confidence* → Highlighted unnatural phrasing.  
+- ✅ Upload **audio** → Result: *Cloned Voice, 95% confidence* → Spectrogram marking anomalies.  
+- ✅ Upload **video** → Result: *Deepfake, 90% confidence* → Marked frames with artifacts.  
+
+---
+
+## ⚠️ Ethical Disclaimer
+Authentica is a **probabilistic system**. Predictions should **not** be considered absolute proof.  
+It is designed to **assist in detecting synthetic content**, not to make final judgments.  
+
+---
+
+## 👩‍💻 Contributors
+- **Vidhi Rawat** – Data Science & Machine Learning Enthusiast ✨  
+- (Add collaborators here)  
+
+---
+
+## 🌟 Future Vision
+Authentica will evolve into a **trust layer for the internet**, enabling:  
+- Safer social media & journalism  
+- Fraud prevention in finance & politics  
+- Protection against misinformation  
+
+---
+
+## 📜 License
+Distributed under the [MIT License](LICENSE).  
+You are free to use and modify for research and educational purposes.  
+
+---
+
+<p align="center">  
+  Made with ❤️ by Vidhi Rawat  
+</p>
+
