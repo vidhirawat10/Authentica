@@ -100,7 +100,6 @@ It is designed to **assist in detecting synthetic content**, not to make final j
 
 ## 👩‍💻 Contributors
 - **Vidhi Rawat** – Data Science & Machine Learning Enthusiast ✨  
-- (Add collaborators here)  
 
 ---
 
