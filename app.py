@@ -12,42 +12,68 @@ st.set_page_config(
 
 # --- Custom CSS ---
 def load_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    try:
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error("CSS file not found. Please ensure '.streamlit/style.css' exists.")
 
-# Call this function to load the CSS file from the .streamlit folder
 load_css(".streamlit/style.css")
 
-
 # --- Model Loading ---
-# Using st.cache_resource to load the model only once
+# Model 1: A balanced, powerful model
 @st.cache_resource
-def get_text_detector():
-    return pipeline("text-classification", model="roberta-base-openai-detector")
+def get_detector_1():
+    return pipeline("text-classification", model="roberta-large-openai-detector")
 
-text_detector = get_text_detector()
+# Model 2: A model specifically focused on ChatGPT output
+@st.cache_resource
+def get_detector_2():
+    return pipeline("text-classification", model="Hello-SimpleAI/chatgpt-detector-roberta")
+
+detector1 = get_detector_1()
+detector2 = get_detector_2()
 
 # --- Helper Functions ---
 def analyze_text(text):
-    """Analyzes text using a real Hugging Face model."""
-    result = text_detector(text)
-    score_real = result[0]['score']
+    """Analyzes text using two models for a more reliable score."""
     
-    if result[0]['label'] == 'Real':
-        score_ai = 1 - score_real
-        explanation = f"The model is {score_real:.1%} confident that this text is human-written."
+    # --- Get prediction from Model 1 ---
+    result1 = detector1(text)[0]
+    if result1['label'] == 'Real':
+        score1_ai = 1 - result1['score']
     else:
-        score_ai = score_real
-        explanation = f"The model is {score_ai:.1%} confident that this text is AI-generated, based on its linguistic patterns."
+        score1_ai = result1['score']
         
-    return score_ai, explanation
+    # --- Get prediction from Model 2 ---
+    result2 = detector2(text)[0]
+    # This model uses 'human' and 'chatgpt' labels
+    if result2['label'].lower() == 'human':
+        score2_ai = 1 - result2['score']
+    else:
+        score2_ai = result2['score']
+        
+    # --- Average the scores ---
+    final_score_ai = (score1_ai + score2_ai) / 2
+    
+    explanation = f"""
+    This result is based on a "second opinion" approach, averaging the outputs of two different AI models.
+    - **Model 1 Confidence (AI):** {score1_ai:.1%}
+    - **Model 2 Confidence (AI):** {score2_ai:.1%}
+    
+    Averaging helps provide a more balanced and reliable detection score.
+    """
+    
+    return final_score_ai, explanation
 
 def analyze_file(uploaded_file):
     """Placeholder for file analysis."""
-    time.sleep(2) # Simulate model running
-    # This is a placeholder
+    time.sleep(2)
     return 0.12, "File analysis is not yet implemented. This is a placeholder result."
 
+# --- UI Sections (Header, File Analysis, Text Analysis) ---
+# (Your existing UI code for the header, file uploader, and text area goes here)
+# ... (I'm omitting the UI code for brevity, as it doesn't need to change)
 # --- UI: Header Section ---
 with st.container():
     st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
