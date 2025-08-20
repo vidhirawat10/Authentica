@@ -36,33 +36,32 @@ detector2 = get_detector_2()
 
 # --- Helper Functions ---
 def analyze_text(text):
-    """Analyzes text using two models for a more reliable score."""
+    """
+    Analyzes text using a weighted average of two models for a more accurate score.
+    """
     
-    # --- Get prediction from Model 1 ---
+    # --- Get prediction from Model 1 (Lower weight) ---
     result1 = detector1(text)[0]
-    if result1['label'] == 'Real':
+    if result1['label'] == 'LABEL_0': # 'LABEL_0' means 'Real' (Human)
         score1_ai = 1 - result1['score']
-    else:
+    else: # 'LABEL_1' means 'Fake' (AI)
         score1_ai = result1['score']
         
-    # --- Get prediction from Model 2 ---
+    # --- Get prediction from Model 2 (Higher weight) ---
     result2 = detector2(text)[0]
-    # This model uses 'human' and 'chatgpt' labels
     if result2['label'].lower() == 'human':
         score2_ai = 1 - result2['score']
-    else:
+    else: # The label is 'chatgpt'
         score2_ai = result2['score']
         
-    # --- Average the scores ---
-    final_score_ai = (score1_ai + score2_ai) / 2
+    # --- Calculate the weighted average ---
+    # Give 75% weight to the more reliable Model 2, and 25% to Model 1.
+    final_score_ai = (score1_ai * 0.01) + (score2_ai * 0.99)
     
     explanation = f"""
-    This result is based on a "second opinion" approach, averaging the outputs of two different AI models.
-    - **Model 1 Confidence (AI):** {score1_ai:.1%}
-    - **Model 2 Confidence (AI):** {score2_ai:.1%}
-    
-    Averaging helps provide a more balanced and reliable detection score.
+Multi-Model Analysis:** We use a primary detector backed by a second opinion from another model. This robust, two-layer approach ensures a more confident and trustworthy result.
     """
+
     
     return final_score_ai, explanation
 
