@@ -1,6 +1,8 @@
 import streamlit as st
-from transformers import pipeline
+from transformers import pipeline, AutoModelForImageClassification, AutoFeatureExtractor
 import time
+from PIL import Image
+import torch
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -21,66 +23,96 @@ def load_css(file_name):
 load_css(".streamlit/style.css")
 
 # --- Model Loading ---
-# Model 1: A balanced, powerful model
-@st.cache_resource
-def get_detector_1():
-    return pipeline("text-classification", model="roberta-large-openai-detector")
 
-# Model 2: A model specifically focused on ChatGPT output
+# Text Models
 @st.cache_resource
-def get_detector_2():
-    return pipeline("text-classification", model="Hello-SimpleAI/chatgpt-detector-roberta")
+def get_text_detectors():
+    detector1 = pipeline("text-classification", model="roberta-large-openai-detector")
+    detector2 = pipeline("text-classification", model="Hello-SimpleAI/chatgpt-detector-roberta")
+    return detector1, detector2
 
-detector1 = get_detector_1()
-detector2 = get_detector_2()
+# SIMPLIFIED: Load only ONE reliable image model and its feature extractor
+@st.cache_resource
+def get_image_detector_manual():
+    model_name = "umm-maybe/AI-image-detector"
+    model = AutoModelForImageClassification.from_pretrained(model_name)
+    feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
+    return model, feature_extractor
+
+text_detector1, text_detector2 = get_text_detectors()
+image_model, image_feature_extractor = get_image_detector_manual()
+
 
 # --- Helper Functions ---
 def analyze_text(text):
-    """
-    Analyzes text using a weighted average of two models for a more accurate score.
-    """
+    result1 = text_detector1(text)[0]
+    score1_ai = 1 - result1['score'] if result1['label'] == 'LABEL_0' else result1['score']
     
-    # --- Get prediction from Model 1 (Lower weight) ---
-    result1 = detector1(text)[0]
-    if result1['label'] == 'LABEL_0': # 'LABEL_0' means 'Real' (Human)
-        score1_ai = 1 - result1['score']
-    else: # 'LABEL_1' means 'Fake' (AI)
-        score1_ai = result1['score']
-        
-    # --- Get prediction from Model 2 (Higher weight) ---
-    result2 = detector2(text)[0]
-    if result2['label'].lower() == 'human':
-        score2_ai = 1 - result2['score']
-    else: # The label is 'chatgpt'
-        score2_ai = result2['score']
-        
-    # --- Calculate the weighted average ---
-    # Give 75% weight to the more reliable Model 2, and 25% to Model 1.
-    final_score_ai = (score1_ai * 0.01) + (score2_ai * 0.99)
+    result2 = text_detector2(text)[0]
+    score2_ai = 1 - result2['score'] if result2['label'].lower() == 'human' else result2['score']
+    
+    final_score_ai = (score1_ai * 0.25) + (score2_ai * 0.75)
     
     explanation = f"""
-Multi-Model Analysis:** We use a primary detector backed by a second opinion from another model. This robust, two-layer approach ensures a more confident and trustworthy result.
-    """
-
-    
+**Multi-Model Analysis:**
+- Primary Detector (ChatGPT Focus) Confidence: **{score2_ai:.2%}**
+- Secondary Detector (General Purpose) Confidence: **{score1_ai:.2%}**
+"""
     return final_score_ai, explanation
 
-def analyze_file(uploaded_file):
-    """Placeholder for file analysis."""
-    time.sleep(2)
-    return 0.12, "File analysis is not yet implemented. This is a placeholder result."
+# REWRITTEN FOR DEBUGGING AND SIMPLICITY
+def analyze_image(image_file, model, feature_extractor):
+    """
+    Analyzes an image using a single model with detailed debug output.
+    """
+    img = Image.open(image_file).convert("RGB")
+    inputs = feature_extractor(images=img, return_tensors="pt")
 
-# --- UI Sections (Header, File Analysis, Text Analysis) ---
-# (Your existing UI code for the header, file uploader, and text area goes here)
-# ... (I'm omitting the UI code for brevity, as it doesn't need to change)
-# --- UI: Header Section ---
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)[0]
+    
+    # Get the model's label mapping from its configuration
+    # id2label = {0: 'real', 1: 'artificial'}
+    real_score = probabilities[0].item()
+    ai_score = probabilities[1].item()
+
+    # The final score is simply the probability of the 'artificial' class
+    final_score = ai_score
+
+    # Create a detailed explanation for debugging
+    explanation = f"""
+**Model Analysis Breakdown:**
+This shows the model's confidence for each possible label.
+
+- **`real` Probability:** `{real_score:.2%}`
+- **`artificial` Probability:** `{ai_score:.2%}`
+    """
+    return final_score, explanation
+
+def analyze_file(uploaded_file):
+    file_type = uploaded_file.type
+    
+    if "image" in file_type:
+        return analyze_image(uploaded_file, image_model, image_feature_extractor)
+    elif "audio" in file_type:
+        time.sleep(2)
+        return 0.25, "Audio analysis is not yet implemented."
+    # ... (rest of the placeholders)
+    else:
+        return None, "Unsupported file type."
+
+# --- UI Sections (Header and Main App) ---
+# Your UI code remains exactly the same, no changes needed here.
+
+# --- UI: Header ---
 with st.container():
     st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
     st.title("Authentica: Multi-Modal Deepfake Detector")
     st.markdown("<h3>Detect AI-generated content across text, images, audio, and video with confidence.</h3>", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     st.write("---")
-
 
 # --- UI: Main Application ---
 col1, col2 = st.columns(2, gap="large")
@@ -99,19 +131,22 @@ with col1:
             with st.spinner('Analyzing file... Please wait.'):
                 score, explanation = analyze_file(uploaded_file)
                 
-                if score > 0.5:
-                    st.error("Result: AI-Generated / Deepfake")
+                if score is not None:
+                    # Let's use a standard 50% threshold for now
+                    if score > 0.5:
+                        st.error("Result: AI-Generated / Deepfake")
+                    else:
+                        st.success("Result: Likely Real / Authentic")
+                    
+                    st.metric(
+                        label="AI-Generated Confidence",
+                        value=f"{score:.2%}",
+                        delta=f"{score - 0.5:.2%}",
+                        delta_color="inverse"
+                    )
+                    st.info(f"**Explanation:** {explanation}")
                 else:
-                    st.success("Result: Likely Real / Authentic")
-                
-                # Display result with st.metric for a nicer look
-                st.metric(
-                    label="AI-Generated Confidence",
-                    value=f"{score:.2%}",
-                    delta=f"{score - 0.5:.2%}",
-                    delta_color="inverse"
-                )
-                st.info(f"**Explanation:** {explanation}")
+                    st.warning(explanation)
 
 # --- Column 2: Text Analysis ---
 with col2:
@@ -122,8 +157,10 @@ with col2:
         label_visibility="collapsed"
     )
 
+    MIN_TEXT_LENGTH = 50
+
     if st.button("Analyze Text", key="text_analyze_button"):
-        if text_input:
+        if text_input and len(text_input) >= MIN_TEXT_LENGTH:
             with st.spinner('Analyzing text... Please wait.'):
                 score, explanation = analyze_text(text_input)
 
@@ -135,9 +172,11 @@ with col2:
                 st.metric(
                     label="AI-Generated Confidence",
                     value=f"{score:.2%}",
-                    delta=f"{score - 0.5:.2%}", # Shows deviation from the 50% threshold
-                    delta_color="inverse" # Red for positive delta, Green for negative
+                    delta=f"{score - 0.5:.2%}",
+                    delta_color="inverse"
                 )
                 st.info(f"**Explanation:** {explanation}")
+        elif text_input:
+            st.warning(f"Please enter at least {MIN_TEXT_LENGTH} characters for an accurate analysis.")
         else:
             st.warning("Please paste some text to analyze.")
